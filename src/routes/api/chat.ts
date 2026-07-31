@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
-
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { AUTOIA_SYSTEM_PROMPT } from "@/lib/system-prompt";
 import type { Database } from "@/integrations/supabase/types";
+import { google } from "@ai-sdk/google";
 
 type ChatRequestBody = {
   messages?: UIMessage[];
@@ -55,7 +54,7 @@ export const Route = createFileRoute("/api/chat")({
           .maybeSingle();
         if (convError || !conversation) return new Response("Conversa não encontrada", { status: 404 });
 
-        const apiKey = process.env.LOVABLE_API_KEY;
+        const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey) return new Response("IA não configurada", { status: 500 });
 
         const lastMessage = messages[messages.length - 1];
@@ -82,11 +81,10 @@ export const Route = createFileRoute("/api/chat")({
           if (updateError) console.error("Erro ao atualizar conversa", updateError);
         }
 
-        const gateway = createLovableAiGatewayProvider(apiKey);
 
         try {
           const result = streamText({
-            model: gateway("google/gemini-3.6-flash"),
+            model: google("gemini-flash-latest"),
             system: AUTOIA_SYSTEM_PROMPT,
             messages: await convertToModelMessages(messages),
           });
