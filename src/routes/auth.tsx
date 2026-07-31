@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,19 +77,8 @@ function AuthPage() {
   }
 
   async function handleGoogle() {
-    setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setLoading(false);
-      toast.error("Falha no login com Google");
-      return;
-    }
-    if (result.redirected) return;
-    window.location.replace("/chat");
-  }
-
+      toast.info("Login com Google temporariamente desabilitado.");
+}
   return (
     <main className="flex min-h-screen items-center justify-center bg-hero-gradient px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-panel">
