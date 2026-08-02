@@ -13,6 +13,8 @@ type ChatRequestBody = {
 function userClient(token: string) {
   const url = process.env.SUPABASE_URL!;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
+  console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+  console.log("SUPABASE_PUBLISHABLE_KEY:", process.env.SUPABASE_PUBLISHABLE_KEY?.substring(0, 25));
   return createClient<Database>(url, key, {
     global: {
       fetch: (input, init) => {
