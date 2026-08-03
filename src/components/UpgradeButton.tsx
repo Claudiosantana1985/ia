@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import  CheckoutModal  from './CheckoutModal' // certifique-se de que o CheckoutModal está na mesma pasta
+import { CheckoutModal } from "./CheckoutModal"; // certifique-se de que o CheckoutModal está na mesma pasta
 
 export function UpgradeButton() {
   const [isOpen, setIsOpen] = useState(false)

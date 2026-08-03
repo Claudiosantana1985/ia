@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useSupabaseClient } from '@supabase/auth-helpers-react'
+import React, { useState, useEffect } from 'react'
+import { supabase } from "@/integrations/supabase/client"
 
 interface CheckoutModalProps {
   planId: string
@@ -8,7 +8,6 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ planId, planName, price }: CheckoutModalProps) {
-  const supabase = useSupabaseClient()
   const [loading, setLoading] = useState(false)
   const [pixData, setPixData] = useState<{
     qr_code: string
