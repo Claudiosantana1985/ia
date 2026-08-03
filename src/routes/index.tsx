@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Activity, BatteryCharging, Camera, Cpu, Gauge, MessageCircle } from "lucide-react";
-
+import { UpgradeButton } from "@/components/UpgradeButton";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/autoia-logo.png";
 
@@ -59,8 +59,8 @@ const FEATURES = [
   },
 ];
 
-function Landing() {
-  return (
+function Landing() { <UpgradeButton />
+  return  (  
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <div className="flex items-center gap-3">
