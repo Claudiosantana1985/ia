@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   try {
     const { plan_id, payment_method } = await req.json()
 
-    // Valida o usuário autenticado a partir do Token do cabeçalho de autorização
+    // Valida o usuário autenticado a partir do Token do cabeçalho
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Não autorizado' }), {
@@ -76,7 +76,6 @@ Deno.serve(async (req) => {
           payer: {
             email: user.email,
           },
-          // CHAVE CRUCIAL: Vincula o pagamento ao ID do usuário do Supabase
           external_reference: user.id,
         }),
       })
@@ -93,8 +92,8 @@ Deno.serve(async (req) => {
         JSON.stringify({
           payment_type: 'pix',
           payment_id: paymentData.id,
-          qr_code: pointOfInteraction?.qr_code, // Chave "Copia e Cola"
-          qr_code_base64: pointOfInteraction?.qr_code_base64, // Imagem Base64 do QR Code
+          qr_code: pointOfInteraction?.qr_code,
+          qr_code_base64: pointOfInteraction?.qr_code_base64,
           ticket_url: pointOfInteraction?.ticket_url,
         }),
         {
@@ -107,44 +106,56 @@ Deno.serve(async (req) => {
     // ==========================================
     // OPÇÃO B: Preferência de Checkout Mercado Pago (Cartão/Outros)
     // ==========================================
+    
+    // Trata o Origin com fallback para evitar erros em ambiente local/HTTPS
+    const originHeader = req.headers.get('origin') || 'http://localhost:3000'
+    const isLocalhost = originHeader.includes('localhost') || originHeader.includes('127.0.0.1')
+
+    const preferenceBody: Record<string, any> = {
+      items: [
+        {
+          title: `Assinatura Plano ${plan.name}`,
+          quantity: 1,
+          currency_id: 'BRL',
+          unit_price: amountInReais,
+        },
+      ],
+      payer: {
+        email: user.email,
+      },
+      external_reference: user.id,
+    }
+
+    // Só adiciona back_urls e auto_return se NÃO for localhost (Mercado Pago bloqueia localhost)
+    if (!isLocalhost) {
+      preferenceBody.back_urls = {
+        success: `${originHeader}/checkout/sucesso`,
+        failure: `${originHeader}/checkout/erro`,
+        pending: `${originHeader}/checkout/pendente`,
+      }
+      preferenceBody.auto_return = 'approved'
+    }
+
     const preferenceResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${MERCADOPAGO_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        items: [
-          {
-            title: `Assinatura Plano ${plan.name}`,
-            quantity: 1,
-            currency_id: 'BRL',
-            unit_price: amountInReais,
-          },
-        ],
-        payer: {
-          email: user.email,
-        },
-        external_reference: user.id,
-        back_urls: {
-          success: `${req.headers.get('origin')}/checkout/sucesso`,
-          failure: `${req.headers.get('origin')}/checkout/erro`,
-          pending: `${req.headers.get('origin')}/checkout/pendente`,
-        },
-        auto_return: 'approved',
-      }),
+      body: JSON.stringify(preferenceBody),
     })
 
     const preferenceData = await preferenceResponse.json()
 
     if (!preferenceResponse.ok) {
-      throw new Error(preferenceData.message || 'Erro ao criar preferência de checkout')
+      console.error('Erro detalhado MP Preference:', preferenceData)
+      throw new Error(preferenceData.message || preferenceData.cause?.[0]?.description || 'Erro ao criar preferência de checkout')
     }
 
     return new Response(
       JSON.stringify({
         payment_type: 'checkout',
-        init_point: preferenceData.init_point, // Link para redirecionar o cliente
+        init_point: preferenceData.init_point, // URL para checkout do cartão
       }),
       {
         status: 200,
