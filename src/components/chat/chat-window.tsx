@@ -3,6 +3,7 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Wrench } from "lucide-react";
+import { UpgradeButton } from "../UpgradeButton";
 
 import {
   Conversation,
@@ -136,6 +137,11 @@ export function ChatWindow({
               </Message>
             ))
           )}
+          
+          {/* Botão de Upgrade no rodapé */}
+<div className="w-full flex justify-center p-3 border-t bg-background">
+  <UpgradeButton />
+</div>
 
           {status === "submitted" && (
             <Message from="assistant">
