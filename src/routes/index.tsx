@@ -1,136 +1,164 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Activity, BatteryCharging, Camera, Cpu, Gauge, MessageCircle } from "lucide-react";
-import { UpgradeButton } from "@/components/UpgradeButton";
+import { Activity, BatteryCharging, Camera, Cpu, Gauge, MessageCircle, Wrench, Car, Zap, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/autoia-logo.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AutoIA Pro — Consultor automotivo com Inteligência Artificial" },
+      { title: "AutoIA Pro — Diagnóstico Automotivo Inteligente" },
       {
         name: "description",
         content:
-          "IA especializada em diagnóstico automotivo, elétrica, injeção eletrônica e códigos de falha. Envie fotos, áudios e PDFs e receba um roteiro técnico passo a passo.",
+          "IA especializada em diagnóstico automotivo, elétrica, injeção eletrônica e códigos de falha. Feito para mecânicos e entusiastas.",
       },
-      { property: "og:title", content: "AutoIA Pro — Consultor automotivo com Inteligência Artificial" },
-      {
-        property: "og:description",
-        content:
-          "IA especializada em diagnóstico automotivo, elétrica, injeção eletrônica e códigos de falha. Envie fotos, áudios e PDFs e receba um roteiro técnico passo a passo.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Landing,
 });
 
-const FEATURES = [
-  {
-    icon: Activity,
-    title: "Diagnóstico guiado",
-    text: "Roteiro de testes por probabilidade, antes de trocar qualquer peça.",
-  },
-  {
-    icon: Cpu,
-    title: "Injeção e códigos de falha",
-    text: "Interpretação de DTCs, live data, sensores e estratégias da ECU.",
-  },
-  {
-    icon: BatteryCharging,
-    title: "Elétrica automotiva",
-    text: "Queda de tensão, massa, fuga de corrente, CAN e esquemas explicados.",
-  },
-  {
-    icon: Camera,
-    title: "Envie foto, áudio e PDF",
-    text: "Mostre a tela do scanner, o osciloscópio ou a peça e receba a leitura.",
-  },
-  {
-    icon: Gauge,
-    title: "Medições e valores",
-    text: "Faixas de referência, torques e procedimentos com fonte técnica.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Histórico por veículo",
-    text: "Cada atendimento fica salvo na sua conta para retomar depois.",
-  },
-];
-
-function Landing() { <UpgradeButton />
-  return  (  
-    <div className="min-h-screen bg-background">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="AutoIA Pro" width={36} height={36} className="h-9 w-9" />
-          <span className="font-display text-lg font-semibold">AutoIA Pro</span>
+function Landing() {
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      {/* HEADER */}
+      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="AutoIA Pro" className="h-8 w-8" />
+            <span className="text-xl font-bold tracking-wider text-amber-500">AutoIA Pro</span>
+          </div>
+          <Button asChild size="sm" className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">
+            <Link to="/auth">Acessar Plataforma</Link>
+          </Button>
         </div>
-        <Button asChild size="sm">
-          <Link to="/auth">Entrar</Link>
-        </Button>
       </header>
 
+      {/* HERO SECTION */}
       <main>
-        <section className="bg-hero-gradient">
-          <div className="mx-auto max-w-4xl px-6 py-24 text-center">
-            <span className="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-primary">
-              Consultor técnico automotivo por IA
-            </span>
-            <h1 className="mt-6 font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Diagnóstico preciso antes de trocar a peça
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-              O AutoIA Pro entende sintomas, códigos de falha, esquemas elétricos e imagens do scanner —
-              e devolve um plano de testes na ordem certa, com valores de referência.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg">
-                <Link to="/auth">Começar agora</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link to="/auth">Já tenho conta</Link>
-              </Button>
+        <section className="py-20 px-6 max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-1.5 rounded-full text-xs font-semibold mb-6">
+            <Zap className="h-4 w-4" /> INTELIGÊNCIA ARTIFICIAL AUTOMOTIVA
+          </div>
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight mb-6">
+            Diagnóstico preciso do seu veículo em segundos — <span className="text-amber-500">antes de trocar a primeira peça.</span>
+          </h1>
+          <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+            O assistente virtual que analisa códigos DTC, sintomas e barulhos para entregar o passo a passo exato de testes, reparos e peças necessárias.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button asChild size="lg" className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-lg px-8 py-6 rounded-xl shadow-lg shadow-amber-500/20">
+              <Link to="/auth">🚀 Testar o AutoIA Pro Agora</Link>
+            </Button>
+          </div>
+          <p className="text-xs text-slate-500 mt-4">✓ Acesso imediato no celular e PC</p>
+        </section>
+
+        {/* DUAS SOLUÇÕES */}
+        <section className="py-16 bg-slate-900 border-y border-slate-800">
+          <div className="max-w-6xl mx-auto px-6">
+            <h2 className="text-3xl font-bold text-center text-white mb-12">Projetado para quem vive a mecânica na prática</h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              
+              {/* CARD MECÂNICOS */}
+              <div className="bg-slate-950 p-8 rounded-2xl border border-slate-800 relative hover:border-amber-500/50 transition">
+                <div className="flex items-center gap-2 text-amber-500 text-sm font-bold uppercase tracking-wider mb-2">
+                  <Wrench className="h-4 w-4" /> Para o Mecânico & Dono de Oficina
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">Aumente a rotatividade do seu pátio</h3>
+                <ul className="space-y-3 text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Fim do Chutômetro:</strong> Receba a ordem lógica de testes do componente mais simples ao mais complexo.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Análise Avançada de DTC:</strong> Interprete códigos de falha com contexto real de defeitos crônicos.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Economia de Tempo:</strong> Resolva falhas elétricas e mecânicas misteriosas no mesmo dia.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* CARD AMADORES */}
+              <div className="bg-slate-950 p-8 rounded-2xl border border-slate-800 relative hover:border-amber-500/50 transition">
+                <div className="flex items-center gap-2 text-amber-500 text-sm font-bold uppercase tracking-wider mb-2">
+                  <Car className="h-4 w-4" /> Para o Entusiasta & Hobbysta
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">Tenha total controle sobre o seu carro</h3>
+                <ul className="space-y-3 text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Zero Enrola:</strong> Saiba exatamente qual é o defeito antes de pedir orçamentos na oficina.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Guia de Peças Exato:</strong> Identifique o código e as especificações corretas para o seu projeto.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <span><strong>Aprendizado Prático:</strong> Entenda causas de barulhos e luzes no painel de forma simples.</span>
+                  </li>
+                </ul>
+              </div>
+
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-6 py-20">
-          <h2 className="text-center font-display text-2xl font-semibold sm:text-3xl">
-            Feito para quem vive dentro da oficina
-          </h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((feature) => (
-              <article
-                key={feature.title}
-                className="rounded-2xl border border-border bg-card p-6 shadow-panel"
-              >
-                <feature.icon className="h-5 w-5 text-primary" />
-                <h3 className="mt-4 text-base font-semibold">{feature.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{feature.text}</p>
-              </article>
-            ))}
+        {/* RECURSOS */}
+        <section className="py-16 max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center text-white mb-12">Recursos completos do AutoIA Pro</h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+              <Activity className="h-6 w-6 text-amber-500 mb-4" />
+              <h3 className="font-bold text-white text-lg">Diagnóstico Guiado</h3>
+              <p className="text-slate-400 text-sm mt-2">Roteiro de testes organizados por probabilidade antes de trocar peças.</p>
+            </div>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+              <Cpu className="h-6 w-6 text-amber-500 mb-4" />
+              <h3 className="font-bold text-white text-lg">Injeção & DTCs</h3>
+              <p className="text-slate-400 text-sm mt-2">Interpretação detalhada de códigos de falha, live data e sensores da ECU.</p>
+            </div>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+              <BatteryCharging className="h-6 w-6 text-amber-500 mb-4" />
+              <h3 className="font-bold text-white text-lg">Elétrica Automotiva</h3>
+              <p className="text-slate-400 text-sm mt-2">Análise de queda de tensão, massa, fuga de corrente e redes CAN.</p>
+            </div>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+              <Camera className="h-6 w-6 text-amber-500 mb-4" />
+              <h3 className="font-bold text-white text-lg">Análise Multimídia</h3>
+              <p className="text-slate-400 text-sm mt-2">Envie foto da tela do scanner, osciloscópio ou peça para diagnóstico instantâneo.</p>
+            </div>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+              <Gauge className="h-6 w-6 text-amber-500 mb-4" />
+              <h3 className="font-bold text-white text-lg">Valores de Referência</h3>
+              <p className="text-slate-400 text-sm mt-2">Tabelas de torques, pressões e faixas de medição técnica.</p>
+            </div>
+            <div className="bg-slate-900 p-6 rounded-xl border border-slate-800">
+              <MessageCircle className="h-6 w-6 text-amber-500 mb-4" />
+              <h3 className="font-bold text-white text-lg">Histórico por Veículo</h3>
+              <p className="text-slate-400 text-sm mt-2">Mantenha todos os diagnósticos salvos para consultar quando quiser.</p>
+            </div>
           </div>
         </section>
 
-        <section className="border-t border-border">
-          <div className="mx-auto max-w-3xl px-6 py-16 text-center">
-            <h2 className="font-display text-2xl font-semibold">
-              Teste com um caso real da sua bancada
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Descreva o veículo, o sintoma e o que já foi verificado. Em segundos você tem o próximo
-              teste.
+        {/* CTA FINAL */}
+        <section className="border-t border-slate-800 bg-slate-900 py-16 text-center">
+          <div className="max-w-3xl mx-auto px-6">
+            <h2 className="text-3xl font-bold text-white">Pronto para acelerar seus diagnósticos?</h2>
+            <p className="mt-4 text-slate-400">
+              Experimente agora mesmo com um caso real da sua oficina ou da sua garagem.
             </p>
-            <Button asChild size="lg" className="mt-6">
-              <Link to="/auth">Criar conta gratuita</Link>
+            <Button asChild size="lg" className="mt-8 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-lg px-8 py-6 rounded-xl">
+              <Link to="/auth">Criar Conta no AutoIA Pro</Link>
             </Button>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
+      <footer className="border-t border-slate-800 py-8 text-center text-xs text-slate-500">
         AutoIA Pro — suporte técnico automotivo assistido por IA.
       </footer>
     </div>

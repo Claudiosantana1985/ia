@@ -2,7 +2,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Wrench } from "lucide-react";
+import { Wrench, Mic } from "lucide-react";
 import { UpgradeButton } from "../UpgradeButton";
 
 import {
@@ -17,6 +17,7 @@ import {
   PromptInputActionMenu,
   PromptInputActionMenuContent,
   PromptInputActionMenuTrigger,
+  PromptInputButton,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
@@ -183,7 +184,12 @@ export function ChatWindow({
                     <PromptInputActionAddAttachments label="Enviar foto, áudio ou PDF" />
                   </PromptInputActionMenuContent>
                 </PromptInputActionMenu>
-              </PromptInputTools>
+                 <PromptInputButton
+    onClick={() => console.log("Microfone clicado")}
+  >
+    <Mic className="size-4" />
+  </PromptInputButton>
+</PromptInputTools>
               <PromptInputSubmit status={status} disabled={isBusy} />
             </PromptInputFooter>
           </PromptInput>
