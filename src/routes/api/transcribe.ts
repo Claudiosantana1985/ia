@@ -14,7 +14,8 @@ export const Route = createFileRoute("/api/transcribe")({
           if (!contentType?.includes("multipart/form-data")) {
             return new Response(
               JSON.stringify({
-                error: "O áudio deve ser enviado como multipart/form-data.",
+                error:
+                  "O áudio deve ser enviado como multipart/form-data.",
               }),
               {
                 status: 400,
@@ -46,13 +47,21 @@ export const Route = createFileRoute("/api/transcribe")({
           console.log("Tipo:", audio.type);
           console.log("Tamanho:", audio.size);
 
-          if (audio.size === 0) {
+          if (audio.size < 1000) {
+            console.log(
+              "Áudio muito pequeno para transcrição.",
+            );
+
             return new Response(
               JSON.stringify({
-                error: "O arquivo de áudio está vazio.",
+                success: true,
+                text: "",
+                silent: true,
+                message:
+                  "Áudio muito curto ou sem dados suficientes.",
               }),
               {
-                status: 400,
+                status: 200,
                 headers: {
                   "Content-Type": "application/json",
                 },
@@ -63,11 +72,14 @@ export const Route = createFileRoute("/api/transcribe")({
           const apiKey = process.env.GOOGLE_API_KEY;
 
           if (!apiKey) {
-            console.error("GOOGLE_API_KEY não configurada.");
+            console.error(
+              "GOOGLE_API_KEY não configurada.",
+            );
 
             return new Response(
               JSON.stringify({
-                error: "IA não configurada no servidor.",
+                error:
+                  "IA não configurada no servidor.",
               }),
               {
                 status: 500,
@@ -80,52 +92,63 @@ export const Route = createFileRoute("/api/transcribe")({
 
           const audioBuffer = await audio.arrayBuffer();
 
-          const audioBase64 = Buffer.from(audioBuffer).toString("base64");
+          const audioBase64 =
+            Buffer.from(audioBuffer).toString("base64");
 
           console.log("Áudio convertido para Base64.");
-          console.log("Iniciando transcrição com Gemini...");
+          console.log(
+            "Iniciando análise de voz com Gemini...",
+          );
 
           const result = await generateText({
             model: google("gemini-flash-latest"),
+
             system: `
-Você é um TRANSCRITOR DE ÁUDIO.
+Você é um sistema de TRANSCRIÇÃO DE VOZ.
 
-Sua única tarefa é identificar e transcrever PALAVRAS QUE REALMENTE ESTÃO PRESENTES NO ÁUDIO.
+Analise cuidadosamente o áudio fornecido.
 
-REGRAS ABSOLUTAS:
+Sua tarefa é exclusivamente identificar o que foi realmente falado por uma pessoa e transcrever essa fala.
 
-1. NÃO invente nenhuma palavra ou frase.
-2. NÃO complete frases que não foram faladas.
-3. NÃO faça perguntas por conta própria.
-4. NÃO responda ao usuário.
-5. NÃO interprete o problema automotivo.
-6. NÃO transforme ruídos ou silêncio em uma pergunta.
-7. Se não houver fala claramente audível, retorne exatamente:
+REGRAS:
+
+- Se houver fala humana claramente audível, transcreva exatamente o conteúdo falado.
+- Preserve nomes de veículos.
+- Preserve nomes de motores.
+- Preserve códigos como P0300, P0301, P0420 etc.
+- Preserve nomes de peças e termos automotivos.
+- Não responda perguntas.
+- Não dê diagnóstico.
+- Não explique o conteúdo.
+- Não transforme o conteúdo em uma pergunta diferente.
+- Não invente frases.
+- Não complete frases que não foram faladas.
+- Não crie conteúdo baseado no contexto automotivo.
+- Se o áudio estiver realmente sem fala humana, responda somente:
 [Áudio sem fala]
-8. Se houver apenas uma pequena parte falada, transcreva somente essa parte.
-9. Preserve nomes de veículos, motores, peças, códigos de falha e termos técnicos.
-10. Não acrescente contexto que não esteja presente no áudio.
-11. Não corrija o conteúdo falado.
-12. Não invente palavras para tornar a frase mais completa.
 
 IMPORTANTE:
-Se houver qualquer dúvida entre silêncio/ruído e fala humana, prefira:
-[Áudio sem fala]
 
-RETORNE SOMENTE A TRANSCRIÇÃO.
+Não presuma que o áudio está sem fala apenas porque a gravação é curta.
+
+Se houver uma voz humana audível, transcreva-a.
+
+Retorne SOMENTE a transcrição.
 `,
+
             messages: [
               {
                 role: "user",
                 content: [
                   {
                     type: "text",
-                    text: "Transcreva o áudio enviado.",
+                    text: "Transcreva exatamente a fala humana presente neste áudio.",
                   },
                   {
                     type: "file",
                     data: audioBase64,
-                    mediaType: audio.type || "audio/webm",
+                    mediaType:
+                      audio.type || "audio/webm",
                   },
                 ],
               },
@@ -134,17 +157,24 @@ RETORNE SOMENTE A TRANSCRIÇÃO.
 
           const transcription = result.text.trim();
 
-          console.log("========== TRANSCRIÇÃO ==========");
+          console.log(
+            "========== TRANSCRIÇÃO ==========",
+          );
           console.log(transcription);
           console.log("=================================");
 
-          if (!transcription) {
+          if (
+            !transcription ||
+            transcription === "[Áudio sem fala]"
+          ) {
             return new Response(
               JSON.stringify({
-                error: "Não foi possível identificar fala no áudio.",
+                success: true,
+                text: "",
+                silent: true,
               }),
               {
-                status: 422,
+                status: 200,
                 headers: {
                   "Content-Type": "application/json",
                 },
@@ -156,6 +186,7 @@ RETORNE SOMENTE A TRANSCRIÇÃO.
             JSON.stringify({
               success: true,
               text: transcription,
+              silent: false,
             }),
             {
               status: 200,
@@ -165,15 +196,50 @@ RETORNE SOMENTE A TRANSCRIÇÃO.
             },
           );
         } catch (error) {
-          console.error("========== ERRO NA TRANSCRIÇÃO ==========");
+          console.error(
+            "========== ERRO NA TRANSCRIÇÃO ==========",
+          );
           console.error(error);
-          console.error("=========================================");
+          console.error(
+            "=========================================",
+          );
+
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : String(error);
+
+          const isQuotaError =
+            errorMessage.includes("Quota exceeded") ||
+            errorMessage.includes("quota") ||
+            errorMessage.includes("rate limit") ||
+            errorMessage.includes(
+              "generate_content_free_tier_requests",
+            );
+
+          if (isQuotaError) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error:
+                  "A cota gratuita do Gemini foi atingida. Aguarde a liberação da cota ou configure faturamento no projeto Google.",
+                quota: true,
+              }),
+              {
+                status: 429,
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              },
+            );
+          }
 
           return new Response(
             JSON.stringify({
-              error: "Falha ao transcrever o áudio.",
-              details:
-                error instanceof Error ? error.message : String(error),
+              success: false,
+              error:
+                "Falha ao transcrever o áudio.",
+              details: errorMessage,
             }),
             {
               status: 500,

@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square } from "lucide-react";
+import { AudioRecorder } from "@/components/chat/audio-recorder";
 
 type AudioRecorderProps = {
   onRecorded: (file: File) => void;
-  disabled?: boolean;
 };
 
-export function AudioRecorder({
-  onRecorded,
-  disabled = false,
-}: AudioRecorderProps) {
+export function AudioRecorder({ onRecorded }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -23,25 +20,19 @@ export function AudioRecorder({
   }, []);
 
   async function startRecording() {
-    if (disabled || isRecording) return;
-
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error(
-          "Seu navegador não permite gravação de áudio.",
-        );
-      }
+      console.log("Solicitando acesso ao microfone...");
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
 
       streamRef.current = stream;
-      chunksRef.current = [];
 
       const recorder = new MediaRecorder(stream);
 
       mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -50,6 +41,8 @@ export function AudioRecorder({
       };
 
       recorder.onstop = async () => {
+        console.log("Processando gravação...");
+
         const blob = new Blob(chunksRef.current, {
           type: recorder.mimeType || "audio/webm",
         });
@@ -58,55 +51,17 @@ export function AudioRecorder({
           [blob],
           `gravacao-${Date.now()}.webm`,
           {
-            type: blob.type,
+            type: recorder.mimeType || "audio/webm",
           },
         );
 
         console.log("Áudio criado:", file);
 
-        try {
-          const formData = new FormData();
+        onRecorded(file);
 
-          formData.append("audio", file);
-
-          console.log("Enviando áudio para /api/transcribe...");
-
-          const response = await fetch("/api/transcribe", {
-            method: "POST",
-            body: formData,
-          });
-
-          const data = await response.json();
-
-          console.log("Resposta da API de áudio:", data);
-
-          if (!response.ok) {
-            throw new Error(
-              data?.error || "Não foi possível enviar o áudio.",
-            );
-          }
-
-          console.log("Áudio enviado com sucesso.");
-          alert("Áudio enviado para o servidor com sucesso!");
-
-          onRecorded(file);
-        } catch (error) {
-          console.error("Erro ao enviar áudio:", error);
-        }
-
-        stream.getTracks().forEach((track) => track.stop());
-
-        streamRef.current = null;
-        mediaRecorderRef.current = null;
-        chunksRef.current = [];
-
-        setIsRecording(false);
-      };
-
-      recorder.onerror = (event) => {
-        console.error("Erro no MediaRecorder:", event);
-
-        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current?.getTracks().forEach((track) => {
+          track.stop();
+        });
 
         streamRef.current = null;
         mediaRecorderRef.current = null;
@@ -125,24 +80,28 @@ export function AudioRecorder({
 
       setIsRecording(false);
 
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-
-      streamRef.current = null;
-      mediaRecorderRef.current = null;
-      chunksRef.current = [];
+      if (error instanceof DOMException) {
+        if (error.name === "NotAllowedError") {
+          alert(
+            "Permissão para usar o microfone foi negada. Verifique as permissões do navegador."
+          );
+        }
+      }
     }
   }
 
   function stopRecording() {
     const recorder = mediaRecorderRef.current;
 
-    if (!recorder || recorder.state === "inactive") {
+    if (!recorder) {
+      console.log("Nenhuma gravação ativa.");
       return;
     }
 
-    console.log("Parando gravação...");
-
-    recorder.stop();
+    if (recorder.state === "recording") {
+      console.log("Parando gravação...");
+      recorder.stop();
+    }
   }
 
   function handleClick() {
@@ -157,20 +116,18 @@ export function AudioRecorder({
     <button
       type="button"
       onClick={handleClick}
-      disabled={disabled}
-      className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
+      title={isRecording ? "Parar gravação" : "Gravar áudio"}
       aria-label={isRecording ? "Parar gravação" : "Gravar áudio"}
+      className={`inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors ${
+        isRecording
+          ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      }`}
     >
       {isRecording ? (
-        <>
-          <Square className="size-4 fill-current" />
-          Parar
-        </>
+        <Square className="size-4 fill-current" />
       ) : (
-        <>
-          <Mic className="size-4" />
-          Gravar
-        </>
+        <Mic className="size-4" />
       )}
     </button>
   );

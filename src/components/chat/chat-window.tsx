@@ -56,9 +56,13 @@ export function ChatWindow({
   const { messages, sendMessage, status, error } = useChat({
     id: threadId,
     messages: initialMessages,
+
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { conversationId: threadId },
+
+      body: {
+        conversationId: threadId,
+      },
 
       fetch: async (url, options) => {
         const { data } = await supabase.auth.getSession();
@@ -90,12 +94,17 @@ export function ChatWindow({
     textareaRef.current?.focus();
   }, [threadId, status]);
 
-  const isBusy = status === "submitted" || status === "streaming";
+  const isBusy =
+    status === "submitted" ||
+    status === "streaming";
 
   function submit(message: PromptInputMessage) {
     const text = message.text?.trim();
 
-    if ((!text && message.files.length === 0) || isBusy) {
+    if (
+      (!text && message.files.length === 0) ||
+      isBusy
+    ) {
       return;
     }
 
@@ -109,112 +118,214 @@ export function ChatWindow({
     }
   }
 
-  function handleRecordedAudio(file: File) {
-    console.log("Áudio gravado:", file);
+  async function handleAudioRecorded(file: File) {
+    try {
+      console.log("Áudio gravado:", file);
 
-    toast.success("Áudio gravado com sucesso", {
-      description: `${Math.round(file.size / 1024)} KB`,
-    });
+      const formData = new FormData();
 
-    /*
-     * Neste momento NÃO enviamos o áudio para o /api/chat.
-     *
-     * Primeiro vamos confirmar que:
-     * 1. o navegador grava;
-     * 2. o arquivo é criado;
-     * 3. o arquivo chega corretamente aqui.
-     *
-     * No próximo passo vamos criar a API de transcrição.
-     */
+      formData.append("audio", file);
+
+      console.log(
+        "Enviando áudio para /api/transcribe...",
+      );
+
+      const response = await fetch(
+        "/api/transcribe",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const data = await response.json();
+
+      console.log(
+        "Resposta da API de áudio:",
+        data,
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error ||
+            "Erro ao transcrever o áudio.",
+        );
+      }
+
+      if (
+        data.silent ||
+        !data.text?.trim()
+      ) {
+        toast.info(
+          "Não identifiquei fala no áudio.",
+        );
+
+        return;
+      }
+
+      const transcription =
+        data.text.trim();
+
+      console.log(
+        "Texto transcrito:",
+        transcription,
+      );
+
+      /*
+       * Coloca a transcrição diretamente
+       * no campo de mensagem.
+       *
+       * O usuário poderá revisar antes
+       * de enviar para a IA.
+       */
+      if (textareaRef.current) {
+        const textarea =
+          textareaRef.current;
+
+        const nativeSetter =
+          Object.getOwnPropertyDescriptor(
+            HTMLTextAreaElement.prototype,
+            "value",
+          )?.set;
+
+        nativeSetter?.call(
+          textarea,
+          transcription,
+        );
+
+        textarea.dispatchEvent(
+          new Event("input", {
+            bubbles: true,
+          }),
+        );
+
+        textarea.focus();
+      }
+
+      toast.success(
+        "Áudio transcrito com sucesso.",
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao enviar/transcrever áudio:",
+        error,
+      );
+
+      toast.error(
+        "Não foi possível transcrever o áudio.",
+        {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Erro desconhecido.",
+        },
+      );
+    }
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <Conversation className="min-h-0 flex-1">
+    <div className="flex h-full flex-col">
+      <Conversation>
         <ConversationContent>
           {messages.length === 0 ? (
-            <div className="flex min-h-full flex-col items-center justify-center px-4 py-8">
-              <div className="mb-6 flex items-center gap-3">
+            <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-12">
+              <div className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-primary/10">
                 <img
                   src={logo}
                   alt="AutoIA Pro"
-                  className="h-12 w-auto object-contain"
+                  className="size-12 object-contain"
                 />
-
-                <div>
-                  <h1 className="text-xl font-semibold text-foreground">
-                    Qual é o defeito de hoje?
-                  </h1>
-
-                  <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                    Descreva o sintoma, envie fotos do painel, da peça ou da
-                    tela do scanner. Eu conduzo o diagnóstico passo a passo
-                    com você.
-                  </p>
-                </div>
               </div>
 
-              <div className="grid w-full max-w-2xl gap-3 sm:grid-cols-2">
-                {SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() =>
-                      submit({
-                        text: suggestion,
-                        files: [],
-                      })
-                    }
-                    className="rounded-xl border border-border bg-card p-3 text-left text-sm text-foreground transition-colors hover:border-primary hover:bg-accent"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
+              <h1 className="text-center text-2xl font-semibold tracking-tight">
+                Qual é o defeito de hoje?
+              </h1>
+
+              <p className="mt-2 max-w-xl text-center text-sm leading-6 text-muted-foreground">
+                Descreva o sintoma, envie fotos do
+                painel, da peça ou da tela do
+                scanner. Eu conduzo o diagnóstico
+                passo a passo com você.
+              </p>
+
+              <div className="mt-8 grid w-full max-w-2xl gap-3 sm:grid-cols-2">
+                {SUGGESTIONS.map(
+                  (suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() =>
+                        submit({
+                          text: suggestion,
+                          files: [],
+                        })
+                      }
+                      className="rounded-xl border border-border bg-card p-3 text-left text-sm text-foreground transition-colors hover:border-primary hover:bg-accent"
+                    >
+                      {suggestion}
+                    </button>
+                  ),
+                )}
               </div>
             </div>
           ) : (
             messages.map((message) => (
-              <Message key={message.id} from={message.role}>
+              <Message
+                key={message.id}
+                from={message.role}
+              >
                 <MessageContent>
-                  {message.parts.map((part, index) => {
-                    if (part.type === "text") {
-                      return (
-                        <MessageResponse
-                          key={`${message.id}-${index}`}
-                        >
-                          {part.text}
-                        </MessageResponse>
-                      );
-                    }
+                  {message.parts.map(
+                    (part, index) => {
+                      if (
+                        part.type === "text"
+                      ) {
+                        return (
+                          <MessageResponse
+                            key={`${message.id}-${index}`}
+                          >
+                            {part.text}
+                          </MessageResponse>
+                        );
+                      }
 
-                    if (
-                      part.type === "file" &&
-                      part.mediaType?.startsWith("image/")
-                    ) {
-                      return (
-                        <img
-                          key={`${message.id}-${index}`}
-                          src={part.url}
-                          alt={part.filename ?? "Anexo enviado"}
-                          className="max-h-72 rounded-lg border border-border object-contain"
-                        />
-                      );
-                    }
+                      if (
+                        part.type === "file" &&
+                        part.mediaType?.startsWith(
+                          "image/",
+                        )
+                      ) {
+                        return (
+                          <img
+                            key={`${message.id}-${index}`}
+                            src={part.url}
+                            alt={
+                              part.filename ??
+                              "Anexo enviado"
+                            }
+                            className="max-h-72 rounded-lg border border-border object-contain"
+                          />
+                        );
+                      }
 
-                    if (part.type === "file") {
-                      return (
-                        <p
-                          key={`${message.id}-${index}`}
-                          className="text-sm text-muted-foreground"
-                        >
-                          Arquivo enviado:{" "}
-                          {part.filename ?? part.mediaType}
-                        </p>
-                      );
-                    }
+                      if (
+                        part.type === "file"
+                      ) {
+                        return (
+                          <p
+                            key={`${message.id}-${index}`}
+                            className="text-sm text-muted-foreground"
+                          >
+                            Arquivo enviado:{" "}
+                            {part.filename ??
+                              part.mediaType}
+                          </p>
+                        );
+                      }
 
-                    return null;
-                  })}
+                      return null;
+                    },
+                  )}
                 </MessageContent>
               </Message>
             ))
@@ -223,14 +334,17 @@ export function ChatWindow({
           {status === "submitted" && (
             <Message from="assistant">
               <MessageContent>
-                <Shimmer>Analisando o caso...</Shimmer>
+                <Shimmer>
+                  Analisando o caso...
+                </Shimmer>
               </MessageContent>
             </Message>
           )}
 
           {error && (
             <p className="text-sm text-destructive">
-              Ocorreu um erro na consulta. Tente novamente em instantes.
+              Ocorreu um erro na consulta. Tente
+              novamente em instantes.
             </p>
           )}
         </ConversationContent>
@@ -245,8 +359,12 @@ export function ChatWindow({
             accept="image/*,application/pdf,audio/*,video/*"
             multiple
             maxFiles={5}
-            maxFileSize={20 * 1024 * 1024}
-            onError={(err) => toast.error(err.message)}
+            maxFileSize={
+              20 * 1024 * 1024
+            }
+            onError={(err) =>
+              toast.error(err.message)
+            }
           >
             <PromptInputTextarea
               ref={textareaRef}
@@ -260,13 +378,16 @@ export function ChatWindow({
                   <PromptInputActionMenuTrigger />
 
                   <PromptInputActionMenuContent>
-                    <PromptInputActionAddAttachments label="Enviar foto, áudio ou PDF" />
+                    <PromptInputActionAddAttachments
+                      label="Enviar foto, áudio ou PDF"
+                    />
                   </PromptInputActionMenuContent>
                 </PromptInputActionMenu>
 
                 <AudioRecorder
-                  onRecorded={handleRecordedAudio}
-                  disabled={isBusy}
+                  onRecorded={
+                    handleAudioRecorded
+                  }
                 />
               </PromptInputTools>
 
@@ -278,8 +399,9 @@ export function ChatWindow({
           </PromptInput>
 
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            O AutoIA Pro pode errar. Confirme torques e especificações no
-            manual da montadora.
+            O AutoIA Pro pode errar. Confirme
+            torques e especificações no manual
+            da montadora.
           </p>
         </div>
       </div>
